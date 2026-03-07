@@ -151,7 +151,7 @@ export default function Sidebar({ runId }: { runId: string }) {
   const maxPace = Math.max(...allPaces);
 
   return (
-    <div className="flex w-72 shrink-0 flex-col">
+    <div className="hidden lg:flex w-72 shrink-0 flex-col">
       <ScrollArea className="flex-1">
         <div className="p-4 pt-0">
           {splits.length === 0 ? (
@@ -220,6 +220,7 @@ export default function Sidebar({ runId }: { runId: string }) {
       </ScrollArea>
 
       <div className="p-4">
+        <Separator className="mb-3" />
         <CheerSection runId={runId} />
       </div>
     </div>

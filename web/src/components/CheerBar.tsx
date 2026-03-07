@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useShape } from "@electric-sql/react";
+import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -55,7 +56,6 @@ export default function CheerSection({ runId }: { runId: string }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <Separator />
       <div className="flex items-center justify-between px-1">
         <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           Cheer
@@ -67,30 +67,34 @@ export default function CheerSection({ runId }: { runId: string }) {
         )}
       </div>
 
-      <div className="grid grid-cols-6 gap-1.5">
+      <div className="flex justify-between">
         {QUICK_CHEERS.map((c) => (
-          <Button
+          <motion.div
             key={c.label}
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => sendCheer(c.emoji)}
-            disabled={sending}
-            className="text-lg hover:scale-110 active:scale-95"
-            title={c.label}
+            whileTap={{ scale: 1.15 }}
+            transition={{ type: "spring", stiffness: 500, damping: 15 }}
           >
-            {c.emoji}
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => sendCheer(c.emoji)}
+              className="text-lg"
+              title={c.label}
+            >
+              {c.emoji}
+            </Button>
+          </motion.div>
         ))}
       </div>
 
-      <InputGroup>
+      <InputGroup className="!bg-background/75 focus-within:!border-ring/30 focus-within:!ring-ring/10">
         <InputGroupTextarea
           value={customText}
           onChange={(e) => setCustomText(e.target.value)}
           placeholder="Send a cheer..."
           maxLength={100}
           rows={2}
-          className="font-mono text-xs"
+          className="font-mono text-base sm:text-xs"
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();

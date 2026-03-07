@@ -10,6 +10,9 @@ const StatsPanel = dynamic(() => import("@/components/StatsPanel"), {
 const Sidebar = dynamic(() => import("@/components/Sidebar"), {
   ssr: false,
 });
+const MobileOverlays = dynamic(() => import("@/components/BottomSheet"), {
+  ssr: false,
+});
 
 type RunRow = {
   id: string;
@@ -41,9 +44,10 @@ export default function RunView() {
   return (
     <div className="flex h-svh flex-col">
       <StatsPanel runId={latestRun.id} startedAt={latestRun.started_at} endedAt={latestRun.ended_at} />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="relative flex flex-1 overflow-hidden">
         <Sidebar runId={latestRun.id} />
         <Map runId={latestRun.id} />
+        <MobileOverlays runId={latestRun.id} />
       </div>
     </div>
   );

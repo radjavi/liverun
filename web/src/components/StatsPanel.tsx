@@ -65,26 +65,22 @@ export default function StatsPanel({ runId, startedAt, endedAt }: { runId: strin
   const altitude = latest?.altitude ? Number(latest.altitude) : null;
 
   return (
-    <div className="flex items-center gap-8 px-6 py-4">
+    <div className="flex items-center gap-4 px-4 py-3 lg:gap-8 lg:px-6 lg:py-4">
       <Stat label="Time" value={formatDuration(elapsed)} unit="" />
       <Stat label="Distance" value={distance ?? "\u2014"} unit="km" />
-      <Stat label="Heart Rate" value={hr ? `${hr}` : "\u2014"} unit="bpm" />
+      <Stat label="HR" value={hr ? `${hr}` : "\u2014"} unit="bpm" />
       <Stat
         label="Pace"
         value={pace ? formatPace(pace) : "\u2014"}
         unit="/km"
       />
-      <Stat
-        label="GAP"
-        value={gap ? formatPace(gap) : "\u2014"}
-        unit="/km"
-      />
-      <Stat label="Cadence" value={cadence ? `${cadence}` : "\u2014"} unit="spm" />
-      <Stat label="Altitude" value={altitude != null ? `${Math.round(altitude)}` : "\u2014"} unit="m" />
+      <div className="hidden sm:flex"><Stat label="GAP" value={gap ? formatPace(gap) : "\u2014"} unit="/km" /></div>
+      <div className="hidden sm:flex"><Stat label="Cadence" value={cadence ? `${cadence}` : "\u2014"} unit="spm" /></div>
+      <div className="hidden sm:flex"><Stat label="Altitude" value={altitude != null ? `${Math.round(altitude)}` : "\u2014"} unit="m" /></div>
 
       <div className="ml-auto flex items-center gap-1.5">
         <span className={`inline-block h-2 w-2 rounded-full ${isError || endedAt ? "bg-red-500" : "bg-green-500 animate-pulse"}`} />
-        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        <span className="hidden lg:inline font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           {isError ? "Disconnected" : endedAt ? "Disconnected" : "Connected"}
         </span>
       </div>
