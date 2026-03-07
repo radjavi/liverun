@@ -38,6 +38,44 @@ struct ContentView: View {
                 .padding(.horizontal)
                 .padding(.top, -10)
                 .tag(1)
+
+                // Swipe right: Cheers
+                VStack(alignment: .leading) {
+                    Text("CHEERS")
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .tracking(1.5)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
+
+                    if workoutManager.cheers.isEmpty {
+                        Spacer()
+                        Text("No cheers yet")
+                            .font(.system(size: 14, design: .monospaced))
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity)
+                        Spacer()
+                    } else {
+                        ScrollView {
+                            LazyVStack(alignment: .leading, spacing: 8) {
+                                ForEach(workoutManager.cheers) { cheer in
+                                    HStack(spacing: 4) {
+                                        Text(cheer.message)
+                                            .font(.system(size: 14, design: .monospaced))
+                                        if cheer.count > 1 {
+                                            Text("+\(cheer.count - 1) more")
+                                                .font(.system(size: 11, design: .monospaced))
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .padding(.top, -10)
+                .tag(2)
             }
             .tabViewStyle(.page)
         } else {

@@ -50,7 +50,9 @@ export default function StatsPanel({ runId, startedAt, endedAt }: { runId: strin
     return () => clearInterval(id);
   }, [startedAt, endedAt]);
 
-  const points = allPoints.filter((p) => p.run_id === runId);
+  const points = allPoints
+    .filter((p) => p.run_id === runId)
+    .sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime());
   const latest = points.length > 0 ? points[points.length - 1] : null;
 
   const hr = latest?.heart_rate ? Number(latest.heart_rate) : null;

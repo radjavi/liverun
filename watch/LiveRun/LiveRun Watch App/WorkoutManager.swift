@@ -7,6 +7,13 @@ import CoreLocation
 import CoreMotion
 import UserNotifications
 
+struct CheerEntry: Identifiable {
+    let id = UUID()
+    let count: Int
+    let message: String
+    let receivedAt: Date
+}
+
 class WorkoutManager: NSObject, ObservableObject {
     @Published var isRunning = false
     @Published var startDate: Date?
@@ -16,12 +23,14 @@ class WorkoutManager: NSObject, ObservableObject {
     @Published var cadence: Double = 0
     @Published var altitude: Double = 0
     @Published var gradeAdjustedPace: Double = 0
+    @Published var cheers: [CheerEntry] = []
 
     private let healthStore = HKHealthStore()
     private let locationManager = CLLocationManager()
     private let pedometer = CMPedometer()
     private var session: HKWorkoutSession?
     private var builder: HKLiveWorkoutBuilder?
+    private var routeBuilder: HKWorkoutRouteBuilder?
     private let trackingService = TrackingService()
 
     private var runId: String?
@@ -54,7 +63,10 @@ class WorkoutManager: NSObject, ObservableObject {
 
         if shouldSave {
             builder?.endCollection(withEnd: now) { [weak self] _, _ in
-                self?.builder?.finishWorkout { _, _ in }
+                self?.builder?.finishWorkout { workout, _ in
+                    guard let workout = workout else { return }
+                    self?.routeBuilder?.finishRoute(with: workout, metadata: nil) { _, _ in }
+                }
             }
         } else {
             builder?.discardWorkout()
@@ -73,7 +85,8 @@ class WorkoutManager: NSObject, ObservableObject {
 
     private func requestPermissions(completion: @escaping () -> Void) {
         let typesToShare: Set<HKSampleType> = [
-            HKObjectType.workoutType()
+            HKObjectType.workoutType(),
+            HKSeriesType.workoutRoute()
         ]
         let typesToRead: Set<HKObjectType> = [
             HKObjectType.quantityType(forIdentifier: .heartRate)!,
@@ -107,6 +120,7 @@ class WorkoutManager: NSObject, ObservableObject {
             session?.startActivity(with: now)
             builder?.beginCollection(withStart: now) { _, _ in }
 
+            routeBuilder = HKWorkoutRouteBuilder(healthStore: healthStore, device: nil)
             locationManager.startUpdatingLocation()
             startPedometerUpdates(from: now)
             requestNotificationPermission()
@@ -128,8 +142,11 @@ class WorkoutManager: NSObject, ObservableObject {
     }
 
     private func handleCheerUpdate(_ update: CheerUpdate) {
-        guard let highlight = update.highlight,
-              Date().timeIntervalSince(lastCheerShownDate) >= 5 else { return }
+        guard let highlight = update.highlight else { return }
+
+        cheers.insert(CheerEntry(count: update.count, message: highlight.message, receivedAt: Date()), at: 0)
+
+        guard Date().timeIntervalSince(lastCheerShownDate) >= 5 else { return }
         lastCheerShownDate = Date()
 
         let content = UNMutableNotificationContent()
@@ -143,7 +160,7 @@ class WorkoutManager: NSObject, ObservableObject {
             trigger: nil
         )
         UNUserNotificationCenter.current().add(request)
-        WKInterfaceDevice.current().play(.click)
+        WKInterfaceDevice.current().play(.directionUp)
     }
 
     // MARK: - Pedometer
@@ -190,6 +207,8 @@ class WorkoutManager: NSObject, ObservableObject {
 extension WorkoutManager: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let runId = runId else { return }
+
+        routeBuilder?.insertRouteData(locations) { _, _ in }
 
         for location in locations {
             altitude = location.altitude

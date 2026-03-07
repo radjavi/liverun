@@ -30,7 +30,9 @@ export default function Map({ runId }: { runId: string }) {
     url: `${window.location.origin}/api/sync/points`,
   });
 
-  const points = allPoints.filter((p) => p.run_id === runId);
+  const points = allPoints
+    .filter((p) => p.run_id === runId)
+    .sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime());
 
   // Fetch mapbox token at runtime
   useEffect(() => {
