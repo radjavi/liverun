@@ -139,10 +139,10 @@ function formatPace(seconds: number): string {
 
 export default function Sidebar({ runId }: { runId: string }) {
   const { data: allPoints } = useShape<PointRow>({
-    url: `${window.location.origin}/api/sync/points`,
+    url: `${window.location.origin}/api/sync/points?runId=${runId}`,
   });
 
-  const points = allPoints.filter((p) => p.run_id === runId);
+  const points = allPoints;
   const splits = computeSplits(points);
 
   // For bar width scaling: fastest pace = widest bar

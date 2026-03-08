@@ -7,6 +7,11 @@ export async function GET(request: NextRequest) {
 
   originUrl.searchParams.set("table", "tracking_points");
 
+  const runId = request.nextUrl.searchParams.get("runId");
+  if (runId) {
+    originUrl.searchParams.set("where", `run_id='${runId}'`);
+  }
+
   for (const param of ELECTRIC_PARAMS) {
     const value = request.nextUrl.searchParams.get(param);
     if (value !== null) {

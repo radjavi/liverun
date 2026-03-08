@@ -27,11 +27,10 @@ export default function Map({ runId }: { runId: string }) {
   const [token, setToken] = useState<string | null>(null);
 
   const { data: allPoints } = useShape<PointRow>({
-    url: `${window.location.origin}/api/sync/points`,
+    url: `${window.location.origin}/api/sync/points?runId=${runId}`,
   });
 
-  const points = allPoints
-    .filter((p) => p.run_id === runId)
+  const points = [...allPoints]
     .sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime());
 
   // Fetch mapbox token at runtime
@@ -55,7 +54,7 @@ export default function Map({ runId }: { runId: string }) {
       pitch: 60,
       bearing: 0,
       antialias: true,
-      attributionControl: false,
+      attributionControl: true,
     });
 
     mapRef.current.on("load", () => {

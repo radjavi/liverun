@@ -19,8 +19,8 @@ struct TrackingPoint: Codable {
 
 actor TrackingService {
     // MARK: - Configuration
-    // Change this to your server URL (use specific dev URL for local testing)
-    private let baseURL = "https://liverun.spcf.app"
+    private let baseURL = Config.apiBaseURL
+    var bearerToken: String?
 
     private var buffer: [TrackingPoint] = []
     private let maxBatchSize = 1
@@ -41,12 +41,23 @@ actor TrackingService {
         return e
     }()
 
+    func configure(token: String?) {
+        bearerToken = token
+    }
+
     // MARK: - Run lifecycle
+
+    private func addAuth(_ request: inout URLRequest) {
+        if let token = bearerToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+    }
 
     func createRun() async -> String? {
         guard let url = URL(string: "\(baseURL)/api/runs") else { return nil }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        addAuth(&request)
 
         do {
             let (data, _) = try await URLSession.shared.data(for: request)
@@ -62,6 +73,7 @@ actor TrackingService {
         guard let url = URL(string: "\(baseURL)/api/runs/\(runId)") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "PATCH"
+        addAuth(&request)
 
         do {
             let _ = try await URLSession.shared.data(for: request)
@@ -95,6 +107,7 @@ actor TrackingService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        addAuth(&request)
 
         do {
             request.httpBody = try encoder.encode(points)

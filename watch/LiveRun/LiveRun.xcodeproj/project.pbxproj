@@ -6,28 +6,21 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B1483F142F5DD328003C4EB1 /* EFQRCode in Frameworks */ = {isa = PBXBuildFile; productRef = B1FD90292F5A0004005F2C5E /* EFQRCode */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		B1FD8FF02F5793DB005F2C5E /* LiveRun Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "LiveRun Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1FD90242F586ECB005F2C5E /* cph-mara.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = "cph-mara.gpx"; path = "../../../../../Downloads/cph-mara.gpx"; sourceTree = "<group>"; };
 		B1FD90252F58709C005F2C5E /* cph-mara-run.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = "cph-mara-run.gpx"; path = "../../../../../Downloads/cph-mara-run.gpx"; sourceTree = "<group>"; };
+		B1FD90262F5A0001005F2C5E /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		B1FD90272F5A0002005F2C5E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		B1FD90032F579420005F2C5E /* Exceptions for "LiveRun Watch App" folder in "LiveRun Watch App" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"LiveRun-Watch-App-Info.plist",
-			);
-			target = B1FD8FEF2F5793DB005F2C5E /* LiveRun Watch App */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B1FD8FF42F5793DB005F2C5E /* LiveRun Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				B1FD90032F579420005F2C5E /* Exceptions for "LiveRun Watch App" folder in "LiveRun Watch App" target */,
-			);
 			path = "LiveRun Watch App";
 			sourceTree = "<group>";
 		};
@@ -38,6 +31,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B1483F142F5DD328003C4EB1 /* EFQRCode in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -47,6 +41,8 @@
 		B1FD8FB72F579011005F2C5E = {
 			isa = PBXGroup;
 			children = (
+				B1FD90262F5A0001005F2C5E /* Debug.xcconfig */,
+				B1FD90272F5A0002005F2C5E /* Release.xcconfig */,
 				B1FD90252F58709C005F2C5E /* cph-mara-run.gpx */,
 				B1FD90242F586ECB005F2C5E /* cph-mara.gpx */,
 				B1FD8FF42F5793DB005F2C5E /* LiveRun Watch App */,
@@ -82,6 +78,7 @@
 			);
 			name = "LiveRun Watch App";
 			packageProductDependencies = (
+				B1FD90292F5A0004005F2C5E /* EFQRCode */,
 			);
 			productName = "LiveRun Watch App";
 			productReference = B1FD8FF02F5793DB005F2C5E /* LiveRun Watch App.app */;
@@ -111,6 +108,9 @@
 			);
 			mainGroup = B1FD8FB72F579011005F2C5E;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				B1FD90282F5A0003005F2C5E /* XCRemoteSwiftPackageReference "EFQRCode" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = B1FD8FC12F579011005F2C5E /* Products */;
 			projectDirPath = "";
@@ -258,6 +258,7 @@
 		};
 		B1FD8FFC2F5793DC005F2C5E /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B1FD90262F5A0001005F2C5E /* Debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -296,6 +297,7 @@
 		};
 		B1FD8FFD2F5793DC005F2C5E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B1FD90272F5A0002005F2C5E /* Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -355,6 +357,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		B1FD90282F5A0003005F2C5E /* XCRemoteSwiftPackageReference "EFQRCode" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/EFPrefix/EFQRCode.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B1FD90292F5A0004005F2C5E /* EFQRCode */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B1FD90282F5A0003005F2C5E /* XCRemoteSwiftPackageReference "EFQRCode" */;
+			productName = EFQRCode;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = B1FD8FB82F579011005F2C5E /* Project object */;
 }

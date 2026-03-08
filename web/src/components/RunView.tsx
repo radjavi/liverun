@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useShape } from "@electric-sql/react";
 
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 const StatsPanel = dynamic(() => import("@/components/StatsPanel"), {
@@ -14,40 +13,22 @@ const MobileOverlays = dynamic(() => import("@/components/BottomSheet"), {
   ssr: false,
 });
 
-type RunRow = {
-  id: string;
-  started_at: string;
-  ended_at: string | null;
-};
-
-export default function RunView() {
-  const { data: runs } = useShape<RunRow>({
-    url: `${window.location.origin}/api/sync/runs`,
-  });
-
-  // Pick the most recently started run
-  const sorted = [...runs].sort(
-    (a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
-  );
-  const latestRun = sorted[0];
-
-  if (!latestRun) {
-    return (
-      <div className="flex h-svh items-center justify-center">
-        <p className="font-mono text-sm text-muted-foreground">
-          No runs yet. Start a run from the Watch app.
-        </p>
-      </div>
-    );
-  }
-
+export default function RunView({
+  runId,
+  startedAt,
+  endedAt,
+}: {
+  runId: string;
+  startedAt: string;
+  endedAt: string | null;
+}) {
   return (
     <div className="flex h-svh flex-col">
-      <StatsPanel runId={latestRun.id} startedAt={latestRun.started_at} endedAt={latestRun.ended_at} />
+      <StatsPanel runId={runId} startedAt={startedAt} endedAt={endedAt} />
       <div className="relative flex flex-1 overflow-hidden">
-        <Sidebar runId={latestRun.id} />
-        <Map runId={latestRun.id} />
-        <MobileOverlays runId={latestRun.id} />
+        <Sidebar runId={runId} />
+        <Map runId={runId} />
+        <MobileOverlays runId={runId} />
       </div>
     </div>
   );

@@ -7,6 +7,13 @@ import CoreLocation
 import CoreMotion
 import UserNotifications
 
+struct RunSummary {
+    let duration: TimeInterval
+    let distanceMeters: Double
+    let avgPace: Double
+    let cheerCount: Int
+}
+
 struct CheerEntry: Identifiable {
     let id = UUID()
     let count: Int
@@ -16,6 +23,7 @@ struct CheerEntry: Identifiable {
 
 class WorkoutManager: NSObject, ObservableObject {
     @Published var isRunning = false
+    @Published var showSummary = false
     @Published var startDate: Date?
     @Published var heartRate: Double = 0
     @Published var pace: Double = 0
@@ -24,6 +32,7 @@ class WorkoutManager: NSObject, ObservableObject {
     @Published var altitude: Double = 0
     @Published var gradeAdjustedPace: Double = 0
     @Published var cheers: [CheerEntry] = []
+    var summaryData: RunSummary?
 
     private let healthStore = HKHealthStore()
     private let locationManager = CLLocationManager()
@@ -32,6 +41,7 @@ class WorkoutManager: NSObject, ObservableObject {
     private var builder: HKLiveWorkoutBuilder?
     private var routeBuilder: HKWorkoutRouteBuilder?
     private let trackingService = TrackingService()
+    var bearerToken: String?
 
     private var runId: String?
     private var previousLocation: CLLocation?
@@ -79,8 +89,31 @@ class WorkoutManager: NSObject, ObservableObject {
             }
         }
 
+        let elapsed = startDate.map { Date().timeIntervalSince($0) } ?? 0
+        summaryData = RunSummary(
+            duration: elapsed,
+            distanceMeters: distanceMeters,
+            avgPace: distanceMeters > 0 ? (elapsed / 60) / (distanceMeters / 1000) : 0,
+            cheerCount: cheers.count
+        )
+
         isRunning = false
+        showSummary = true
         previousLocation = nil
+    }
+
+    func dismissSummary() {
+        showSummary = false
+        summaryData = nil
+        heartRate = 0
+        pace = 0
+        distanceMeters = 0
+        cadence = 0
+        altitude = 0
+        gradeAdjustedPace = 0
+        cheers = []
+        startDate = nil
+        runId = nil
     }
 
     private func requestPermissions(completion: @escaping () -> Void) {
@@ -127,6 +160,7 @@ class WorkoutManager: NSObject, ObservableObject {
             isRunning = true
 
             Task {
+                await trackingService.configure(token: bearerToken)
                 if let id = await trackingService.createRun() {
                     await MainActor.run { self.runId = id }
                 }

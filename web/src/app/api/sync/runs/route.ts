@@ -7,6 +7,11 @@ export async function GET(request: NextRequest) {
 
   originUrl.searchParams.set("table", "runs");
 
+  const userId = request.nextUrl.searchParams.get("userId");
+  if (userId) {
+    originUrl.searchParams.set("where", `user_id='${userId}'`);
+  }
+
   for (const param of ELECTRIC_PARAMS) {
     const value = request.nextUrl.searchParams.get(param);
     if (value !== null) {

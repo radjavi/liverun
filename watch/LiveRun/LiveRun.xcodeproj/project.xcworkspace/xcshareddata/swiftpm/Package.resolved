@@ -1,0 +1,33 @@
+{
+  "originHash" : "f26b6def06834624703e59f1cb597ca7f79a28d4a2374002b2056fff3c303cec",
+  "pins" : [
+    {
+      "identity" : "efqrcode",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/EFPrefix/EFQRCode.git",
+      "state" : {
+        "revision" : "07ff9e2e83a4bbd384e5a8e33b47f389c9aac762",
+        "version" : "7.0.3"
+      }
+    },
+    {
+      "identity" : "swift_qrcodejs",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/EFPrefix/swift_qrcodejs.git",
+      "state" : {
+        "revision" : "d1605333f7edac39b4518538ef4f2638fdd2e4d6",
+        "version" : "2.3.1"
+      }
+    },
+    {
+      "identity" : "swiftdraw",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swhitty/SwiftDraw.git",
+      "state" : {
+        "revision" : "a19594794cdcdee5135caad3bc119096c50c92c2",
+        "version" : "0.22.0"
+      }
+    }
+  ],
+  "version" : 3
+}

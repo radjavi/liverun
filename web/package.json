@@ -12,6 +12,7 @@
     "@electric-sql/client": "^1.5.10",
     "@electric-sql/react": "^1.0.39",
     "@mapbox/togeojson": "^0.16.2",
+    "better-auth": "^1.5.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.1",

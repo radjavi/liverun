@@ -33,7 +33,7 @@ function formatDuration(seconds: number): string {
 
 export default function StatsPanel({ runId, startedAt, endedAt }: { runId: string; startedAt: string; endedAt: string | null }) {
   const { data: allPoints, isError } = useShape<PointRow>({
-    url: `${window.location.origin}/api/sync/points`,
+    url: `${window.location.origin}/api/sync/points?runId=${runId}`,
   });
 
   const [elapsed, setElapsed] = useState(0);
@@ -50,8 +50,7 @@ export default function StatsPanel({ runId, startedAt, endedAt }: { runId: strin
     return () => clearInterval(id);
   }, [startedAt, endedAt]);
 
-  const points = allPoints
-    .filter((p) => p.run_id === runId)
+  const points = [...allPoints]
     .sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime());
   const latest = points.length > 0 ? points[points.length - 1] : null;
 

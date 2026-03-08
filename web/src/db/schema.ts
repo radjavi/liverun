@@ -7,9 +7,11 @@ import {
   doublePrecision,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { user } from "./auth-schema";
 
 export const runs = pgTable("runs", {
   id: text("id").primaryKey(),
+  userId: text("user_id").references(() => user.id),
   startedAt: timestamp("started_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

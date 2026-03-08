@@ -34,10 +34,10 @@ export default function CheerSection({ runId }: { runId: string }) {
   const [sending, setSending] = useState(false);
 
   const { data: allCheers } = useShape<CheerRow>({
-    url: `${window.location.origin}/api/sync/cheers`,
+    url: `${window.location.origin}/api/sync/cheers?runId=${runId}`,
   });
 
-  const cheerCount = allCheers.filter((c) => c.run_id === runId).length;
+  const cheerCount = allCheers.length;
 
   async function sendCheer(message: string) {
     if (!message.trim() || sending) return;

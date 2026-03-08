@@ -46,3 +46,7 @@ next-env.d.ts
 
 # electric
 persistent/
+
+# xcode config
+watch/LiveRun/Debug.xcconfig
+watch/LiveRun/Release.xcconfig
