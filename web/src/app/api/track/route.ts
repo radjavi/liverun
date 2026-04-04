@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       cadence: p.cadence != null ? Math.round(p.cadence as number) : null,
       elevationGain: (p.elevationGain as number) ?? null,
       gradeAdjustedPace: (p.gradeAdjustedPace as number) ?? null,
+      paused: (p.paused as boolean) ?? false,
       recordedAt: new Date(p.recordedAt as string),
     };
   });

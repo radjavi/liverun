@@ -1,0 +1,1 @@
+ALTER TABLE "tracking_points" ADD COLUMN "paused" boolean DEFAULT false NOT NULL;

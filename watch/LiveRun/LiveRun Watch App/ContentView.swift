@@ -38,33 +38,29 @@ struct HomeView: View {
             ProfileView(authManager: authManager)
                 .tag(0)
 
-            VStack {
-                Spacer()
-                VStack(spacing: 6) {
-                    Image(systemName: "figure.run")
-                        .font(.system(size: 32))
-                        .foregroundColor(primaryColor)
-                    Text("Outdoor Run")
-                        .font(.system(size: 14, weight: .medium, design: .monospaced))
-                        .foregroundColor(.white)
-                }
-                Spacer()
-                Spacer()
+            List {
                 Button {
                     workoutManager.bearerToken = authManager.bearerToken
                     workoutManager.start()
                 } label: {
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(primaryColor)
-                        .cornerRadius(8)
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Outdoor Run")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white)
+                            Text("Start New")
+                                .font(.system(size: 13))
+                                .foregroundColor(.gray)
+                        }
+                        Spacer()
+                        Image(systemName: "figure.run")
+                            .font(.system(size: 24))
+                            .foregroundColor(primaryColor)
+                    }
+                    .padding(.vertical, 4)
                 }
-                .buttonStyle(.plain)
             }
-            .padding()
+            .listStyle(.carousel)
             .tag(1)
         }
         .tabViewStyle(.page)

@@ -8,23 +8,47 @@ struct RunningView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            // Swipe left: Stop button
-            VStack {
-                Spacer()
-                DestructiveButton(title: "Stop") {
-                    workoutManager.stop()
+            // Swipe left: Pause & Stop buttons
+            VStack(spacing: 4) {
+                Button {
+                    workoutManager.togglePause()
+                } label: {
+                    HStack {
+                        Image(systemName: workoutManager.isPaused ? "play.fill" : "pause.fill")
+                            .font(.system(size: 14))
+                        Text(workoutManager.isPaused ? "Resume" : "Pause")
+                            .font(.system(size: 16, weight: .semibold, design: .monospaced))
+                    }
+                    .foregroundColor(primaryColor)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(primaryColor.opacity(0.15))
+                    .cornerRadius(8)
                 }
+                .buttonStyle(.plain)
+                Button {
+                    workoutManager.stop()
+                } label: {
+                    HStack {
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 14))
+                        Text("Stop")
+                            .font(.system(size: 16, weight: .semibold, design: .monospaced))
+                    }
+                    .foregroundColor(.red)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.red.opacity(0.15))
+                    .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
             }
             .padding()
             .tag(0)
 
             // Main page: Stats
             VStack(alignment: .leading, spacing: 6) {
-                if let start = workoutManager.startDate {
-                    TimelineView(.periodic(from: .now, by: 1)) { context in
-                        let elapsed = context.date.timeIntervalSince(start)
-                        StatRow(label: "TIME", value: formatDuration(elapsed), unit: "")
-                    }
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    let elapsed = workoutManager.elapsedTime(at: context.date)
+                    StatRow(label: "TIME", value: formatDuration(elapsed), unit: "")
                 }
                 StatRow(label: "HEART RATE", value: workoutManager.heartRate > 0 ? "\(Int(workoutManager.heartRate))" : "\u{2014}", unit: "bpm")
                 StatRow(label: "PACE", value: workoutManager.pace > 0 ? formatPaceCompact(units.pace(minPerKm: workoutManager.pace)) : "\u{2014}", unit: units.paceUnit)
@@ -73,6 +97,17 @@ struct RunningView: View {
             .tag(2)
         }
         .tabViewStyle(.page)
+        .alert("Still running?", isPresented: $workoutManager.showResumePrompt) {
+            Button("Resume") {
+                workoutManager.resume()
+                selectedTab = 1
+            }
+            Button("Stay Paused", role: .cancel) {
+                workoutManager.dismissResumePrompt()
+            }
+        } message: {
+            Text("It looks like you're moving. Resume to keep tracking.")
+        }
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useShape } from "@electric-sql/react";
 
 type PointRow = {
@@ -14,6 +14,7 @@ type PointRow = {
   distance_meters: string | null;
   cadence: string | null;
   grade_adjusted_pace: string | null;
+  paused: boolean | string;
   recorded_at: string;
   created_at: string;
 };
@@ -36,23 +37,44 @@ export default function StatsPanel({ runId, startedAt, endedAt }: { runId: strin
     url: `${window.location.origin}/api/sync/points?runId=${runId}`,
   });
 
+  const points = [...allPoints]
+    .sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime());
+  const latest = points.length > 0 ? points[points.length - 1] : null;
+  const isPaused = latest?.paused === true || latest?.paused === "true";
+
+  // Compute total paused duration from the points
+  const pausedDuration = useMemo(() => {
+    let total = 0;
+    for (let i = 1; i < points.length; i++) {
+      const wasPaused = points[i - 1].paused === true || points[i - 1].paused === "true";
+      if (wasPaused) {
+        const prev = new Date(points[i - 1].recorded_at).getTime();
+        const curr = new Date(points[i].recorded_at).getTime();
+        total += curr - prev;
+      }
+    }
+    return total;
+  }, [points]);
+
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
     const start = new Date(startedAt).getTime();
     if (endedAt) {
-      setElapsed(Math.floor((new Date(endedAt).getTime() - start) / 1000));
+      setElapsed(Math.floor((new Date(endedAt).getTime() - start - pausedDuration) / 1000));
       return;
     }
-    const tick = () => setElapsed(Math.floor((Date.now() - start) / 1000));
+    if (isPaused) {
+      // Freeze: count up to latest point minus paused time
+      const latestTime = latest ? new Date(latest.recorded_at).getTime() : Date.now();
+      setElapsed(Math.floor((latestTime - start - pausedDuration) / 1000));
+      return;
+    }
+    const tick = () => setElapsed(Math.floor((Date.now() - start - pausedDuration) / 1000));
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [startedAt, endedAt]);
-
-  const points = [...allPoints]
-    .sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime());
-  const latest = points.length > 0 ? points[points.length - 1] : null;
+  }, [startedAt, endedAt, isPaused, pausedDuration, latest]);
 
   const hr = latest?.heart_rate ? Number(latest.heart_rate) : null;
   const pace = latest?.pace ? Number(latest.pace) : null;
@@ -62,6 +84,19 @@ export default function StatsPanel({ runId, startedAt, endedAt }: { runId: strin
   const gap = latest?.grade_adjusted_pace ? Number(latest.grade_adjusted_pace) : null;
   const cadence = latest?.cadence ? Number(latest.cadence) : null;
   const altitude = latest?.altitude ? Number(latest.altitude) : null;
+
+  const statusDot = isError || endedAt
+    ? "bg-red-500"
+    : isPaused
+      ? "bg-yellow-500"
+      : "bg-green-500 animate-pulse";
+  const statusLabel = isError
+    ? "Disconnected"
+    : endedAt
+      ? "Disconnected"
+      : isPaused
+        ? "Paused"
+        : "Connected";
 
   return (
     <div className="flex items-center gap-4 px-4 py-3 lg:gap-8 lg:px-6 lg:py-4">
@@ -78,9 +113,9 @@ export default function StatsPanel({ runId, startedAt, endedAt }: { runId: strin
       <div className="hidden sm:flex"><Stat label="Altitude" value={altitude != null ? `${Math.round(altitude)}` : "\u2014"} unit="m" /></div>
 
       <div className="ml-auto flex items-center gap-1.5">
-        <span className={`inline-block h-2 w-2 rounded-full ${isError || endedAt ? "bg-red-500" : "bg-green-500 animate-pulse"}`} />
+        <span className={`inline-block h-2 w-2 rounded-full ${statusDot}`} />
         <span className="hidden lg:inline font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          {isError ? "Disconnected" : endedAt ? "Disconnected" : "Connected"}
+          {statusLabel}
         </span>
       </div>
     </div>

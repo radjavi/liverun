@@ -23,6 +23,7 @@ struct CheerEntry: Identifiable {
 
 class WorkoutManager: NSObject, ObservableObject {
     @Published var isRunning = false
+    @Published var isPaused = false
     @Published var showSummary = false
     @Published var startDate: Date?
     @Published var heartRate: Double = 0
@@ -48,6 +49,10 @@ class WorkoutManager: NSObject, ObservableObject {
     private var lastCheerShownDate = Date.distantPast
     private var isRetryingCreateRun = false
     private var pendingPoints: [PendingPoint] = []
+    private var pausedDuration: TimeInterval = 0
+    private var pauseStartDate: Date?
+    private var pauseStartLocation: CLLocation?
+    @Published var showResumePrompt = false
 
     private struct PendingPoint {
         let location: CLLocation
@@ -56,6 +61,7 @@ class WorkoutManager: NSObject, ObservableObject {
         let distanceMeters: Double?
         let cadence: Double?
         let gradeAdjustedPace: Double?
+        let paused: Bool
     }
 
     override init() {
@@ -67,10 +73,56 @@ class WorkoutManager: NSObject, ObservableObject {
         locationManager.allowsBackgroundLocationUpdates = true
     }
 
+    func elapsedTime(at date: Date) -> TimeInterval {
+        guard let start = startDate else { return 0 }
+        let total = date.timeIntervalSince(start)
+        let currentPause = pauseStartDate.map { date.timeIntervalSince($0) } ?? 0
+        return total - pausedDuration - currentPause
+    }
+
     func start() {
         requestPermissions { [weak self] in
             self?.beginWorkout()
         }
+    }
+
+    func togglePause() {
+        if isPaused {
+            resume()
+        } else {
+            pause()
+        }
+    }
+
+    func pause() {
+        guard !isPaused else { return }
+        session?.pause()
+        pedometer.stopUpdates()
+        pauseStartDate = Date()
+        pauseStartLocation = previousLocation
+        isPaused = true
+        WKInterfaceDevice.current().play(.click)
+    }
+
+    func resume() {
+        guard isPaused else { return }
+        session?.resume()
+        if let start = startDate {
+            startPedometerUpdates(from: start)
+        }
+        if let pauseStart = pauseStartDate {
+            pausedDuration += Date().timeIntervalSince(pauseStart)
+            pauseStartDate = nil
+        }
+        pauseStartLocation = nil
+        showResumePrompt = false
+        isPaused = false
+        WKInterfaceDevice.current().play(.click)
+    }
+
+    func dismissResumePrompt() {
+        showResumePrompt = false
+        pauseStartLocation = previousLocation
     }
 
     func stop() {
@@ -100,7 +152,7 @@ class WorkoutManager: NSObject, ObservableObject {
             }
         }
 
-        let elapsed = startDate.map { Date().timeIntervalSince($0) } ?? 0
+        let elapsed = elapsedTime(at: Date())
         summaryData = RunSummary(
             duration: elapsed,
             distanceMeters: distanceMeters,
@@ -109,6 +161,7 @@ class WorkoutManager: NSObject, ObservableObject {
         )
 
         isRunning = false
+        isPaused = false
         showSummary = true
         previousLocation = nil
     }
@@ -127,6 +180,10 @@ class WorkoutManager: NSObject, ObservableObject {
         runId = nil
         pendingPoints = []
         isRetryingCreateRun = false
+        pausedDuration = 0
+        pauseStartDate = nil
+        pauseStartLocation = nil
+        showResumePrompt = false
     }
 
     private func requestPermissions(completion: @escaping () -> Void) {
@@ -250,6 +307,19 @@ class WorkoutManager: NSObject, ObservableObject {
 // MARK: - CLLocationManagerDelegate
 extension WorkoutManager: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        let currentlyPaused = isPaused
+        let capturedPoints = locations.map { location in
+            PendingPoint(
+                location: location,
+                heartRate: heartRate > 0 ? heartRate : nil,
+                pace: pace > 0 ? pace : nil,
+                distanceMeters: distanceMeters > 0 ? distanceMeters : nil,
+                cadence: cadence > 0 ? cadence : nil,
+                gradeAdjustedPace: gradeAdjustedPace > 0 ? gradeAdjustedPace : nil,
+                paused: currentlyPaused
+            )
+        }
+
         routeBuilder?.insertRouteData(locations) { _, _ in }
 
         for location in locations {
@@ -260,16 +330,15 @@ extension WorkoutManager: CLLocationManagerDelegate {
             previousLocation = location
         }
 
-        // Capture current sensor values alongside each location
-        let capturedPoints = locations.map { location in
-            PendingPoint(
-                location: location,
-                heartRate: heartRate > 0 ? heartRate : nil,
-                pace: pace > 0 ? pace : nil,
-                distanceMeters: distanceMeters > 0 ? distanceMeters : nil,
-                cadence: cadence > 0 ? cadence : nil,
-                gradeAdjustedPace: gradeAdjustedPace > 0 ? gradeAdjustedPace : nil
-            )
+        if isPaused {
+            // Check if user started moving
+            if let origin = pauseStartLocation, let latest = locations.last {
+                let distance = latest.distance(from: origin)
+                if distance > 30 && !showResumePrompt {
+                    showResumePrompt = true
+                    WKInterfaceDevice.current().play(.notification)
+                }
+            }
         }
 
         if runId == nil {
@@ -312,6 +381,7 @@ extension WorkoutManager: CLLocationManagerDelegate {
                     distanceMeters: p.distanceMeters,
                     cadence: p.cadence,
                     gradeAdjustedPace: p.gradeAdjustedPace,
+                    paused: p.paused,
                     recordedAt: p.location.timestamp
                 ))
             }
@@ -332,6 +402,7 @@ extension WorkoutManager: CLLocationManagerDelegate {
                 distanceMeters: p.distanceMeters,
                 cadence: p.cadence,
                 gradeAdjustedPace: p.gradeAdjustedPace,
+                paused: p.paused,
                 recordedAt: p.location.timestamp
             )
             Task {
@@ -345,7 +416,36 @@ extension WorkoutManager: CLLocationManagerDelegate {
 
 // MARK: - HKWorkoutSessionDelegate
 extension WorkoutManager: HKWorkoutSessionDelegate {
-    func workoutSession(_ workoutSession: HKWorkoutSession, didChangeTo toState: HKWorkoutSessionState, from fromState: HKWorkoutSessionState, date: Date) {}
+    func workoutSession(_ workoutSession: HKWorkoutSession, didChangeTo toState: HKWorkoutSessionState, from fromState: HKWorkoutSessionState, date: Date) {
+        DispatchQueue.main.async {
+            switch toState {
+            case .paused:
+                if !self.isPaused {
+                    self.pedometer.stopUpdates()
+                    self.pauseStartDate = Date()
+                    self.pauseStartLocation = self.previousLocation
+                    self.isPaused = true
+                    WKInterfaceDevice.current().play(.click)
+                }
+            case .running where fromState == .paused:
+                if self.isPaused {
+                    if let start = self.startDate {
+                        self.startPedometerUpdates(from: start)
+                    }
+                    if let pauseStart = self.pauseStartDate {
+                        self.pausedDuration += Date().timeIntervalSince(pauseStart)
+                        self.pauseStartDate = nil
+                    }
+                    self.pauseStartLocation = nil
+                    self.showResumePrompt = false
+                    self.isPaused = false
+                    WKInterfaceDevice.current().play(.click)
+                }
+            default:
+                break
+            }
+        }
+    }
 
     func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {
         print("Workout session failed: \(error)")

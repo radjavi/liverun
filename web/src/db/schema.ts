@@ -4,6 +4,7 @@ import {
   serial,
   integer,
   real,
+  boolean,
   doublePrecision,
   timestamp,
 } from "drizzle-orm/pg-core";
@@ -43,6 +44,7 @@ export const trackingPoints = pgTable("tracking_points", {
   cadence: integer("cadence"),
   elevationGain: real("elevation_gain"),
   gradeAdjustedPace: real("grade_adjusted_pace"),
+  paused: boolean("paused").notNull().default(false),
   recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

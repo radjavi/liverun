@@ -10,10 +10,11 @@ struct TrackingPoint: Codable {
     let distanceMeters: Double?
     let cadence: Double?
     let gradeAdjustedPace: Double?
+    let paused: Bool
     let recordedAt: Date
 
     enum CodingKeys: String, CodingKey {
-        case runId, latitude, longitude, altitude, heartRate, pace, distanceMeters, cadence, gradeAdjustedPace, recordedAt
+        case runId, latitude, longitude, altitude, heartRate, pace, distanceMeters, cadence, gradeAdjustedPace, paused, recordedAt
     }
 }
 
