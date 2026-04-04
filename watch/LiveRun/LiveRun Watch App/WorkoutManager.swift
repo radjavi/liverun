@@ -46,6 +46,17 @@ class WorkoutManager: NSObject, ObservableObject {
     private var runId: String?
     private var previousLocation: CLLocation?
     private var lastCheerShownDate = Date.distantPast
+    private var isRetryingCreateRun = false
+    private var pendingPoints: [PendingPoint] = []
+
+    private struct PendingPoint {
+        let location: CLLocation
+        let heartRate: Double?
+        let pace: Double?
+        let distanceMeters: Double?
+        let cadence: Double?
+        let gradeAdjustedPace: Double?
+    }
 
     override init() {
         super.init()
@@ -84,8 +95,8 @@ class WorkoutManager: NSObject, ObservableObject {
 
         Task {
             if let runId = runId {
-                await trackingService.flush()
-                await trackingService.endRun(runId: runId)
+                await trackingService.flushWithRetry()
+                await trackingService.endRunWithRetry(runId: runId, endedAt: now)
             }
         }
 
@@ -114,6 +125,8 @@ class WorkoutManager: NSObject, ObservableObject {
         cheers = []
         startDate = nil
         runId = nil
+        pendingPoints = []
+        isRetryingCreateRun = false
     }
 
     private func requestPermissions(completion: @escaping () -> Void) {
@@ -161,9 +174,6 @@ class WorkoutManager: NSObject, ObservableObject {
 
             Task {
                 await trackingService.configure(token: bearerToken)
-                if let id = await trackingService.createRun() {
-                    await MainActor.run { self.runId = id }
-                }
             }
         } catch {
             print("Failed to start workout: \(error)")
@@ -240,8 +250,6 @@ class WorkoutManager: NSObject, ObservableObject {
 // MARK: - CLLocationManagerDelegate
 extension WorkoutManager: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let runId = runId else { return }
-
         routeBuilder?.insertRouteData(locations) { _, _ in }
 
         for location in locations {
@@ -250,18 +258,81 @@ extension WorkoutManager: CLLocationManagerDelegate {
                 updateGAP(from: prev, to: location)
             }
             previousLocation = location
+        }
 
-            let point = TrackingPoint(
-                runId: runId,
-                latitude: location.coordinate.latitude,
-                longitude: location.coordinate.longitude,
-                altitude: location.altitude,
+        // Capture current sensor values alongside each location
+        let capturedPoints = locations.map { location in
+            PendingPoint(
+                location: location,
                 heartRate: heartRate > 0 ? heartRate : nil,
                 pace: pace > 0 ? pace : nil,
                 distanceMeters: distanceMeters > 0 ? distanceMeters : nil,
                 cadence: cadence > 0 ? cadence : nil,
-                gradeAdjustedPace: gradeAdjustedPace > 0 ? gradeAdjustedPace : nil,
-                recordedAt: location.timestamp
+                gradeAdjustedPace: gradeAdjustedPace > 0 ? gradeAdjustedPace : nil
+            )
+        }
+
+        if runId == nil {
+            pendingPoints.append(contentsOf: capturedPoints)
+            retryCreateRun()
+            return
+        }
+
+        enqueuePoints(capturedPoints)
+    }
+
+    private func retryCreateRun() {
+        guard !isRetryingCreateRun else { return }
+        isRetryingCreateRun = true
+        Task {
+            let id = await trackingService.createRun(startedAt: startDate)
+            await MainActor.run {
+                self.isRetryingCreateRun = false
+                if let id = id {
+                    self.runId = id
+                    self.drainPendingPoints()
+                }
+            }
+        }
+    }
+
+    private func drainPendingPoints() {
+        let points = pendingPoints
+        pendingPoints.removeAll()
+        guard let runId = runId else { return }
+        Task {
+            for p in points {
+                await trackingService.bufferPoint(TrackingPoint(
+                    runId: runId,
+                    latitude: p.location.coordinate.latitude,
+                    longitude: p.location.coordinate.longitude,
+                    altitude: p.location.altitude,
+                    heartRate: p.heartRate,
+                    pace: p.pace,
+                    distanceMeters: p.distanceMeters,
+                    cadence: p.cadence,
+                    gradeAdjustedPace: p.gradeAdjustedPace,
+                    recordedAt: p.location.timestamp
+                ))
+            }
+            await trackingService.flush()
+        }
+    }
+
+    private func enqueuePoints(_ points: [PendingPoint]) {
+        guard let runId = runId else { return }
+        for p in points {
+            let point = TrackingPoint(
+                runId: runId,
+                latitude: p.location.coordinate.latitude,
+                longitude: p.location.coordinate.longitude,
+                altitude: p.location.altitude,
+                heartRate: p.heartRate,
+                pace: p.pace,
+                distanceMeters: p.distanceMeters,
+                cadence: p.cadence,
+                gradeAdjustedPace: p.gradeAdjustedPace,
+                recordedAt: p.location.timestamp
             )
             Task {
                 if let cheerUpdate = await trackingService.enqueue(point) {

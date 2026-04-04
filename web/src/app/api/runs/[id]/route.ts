@@ -24,9 +24,17 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  let endedAt = new Date();
+  try {
+    const body = await request.json();
+    if (body.endedAt) endedAt = new Date(body.endedAt);
+  } catch {
+    // No body — use now
+  }
+
   await db
     .update(runs)
-    .set({ endedAt: new Date() })
+    .set({ endedAt })
     .where(eq(runs.id, id));
 
   return NextResponse.json({ ok: true });

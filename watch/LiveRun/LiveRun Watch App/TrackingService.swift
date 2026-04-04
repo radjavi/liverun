@@ -53,11 +53,17 @@ actor TrackingService {
         }
     }
 
-    func createRun() async -> String? {
+    func createRun(startedAt: Date? = nil) async -> String? {
         guard let url = URL(string: "\(baseURL)/api/runs") else { return nil }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         addAuth(&request)
+
+        if let startedAt = startedAt {
+            struct Body: Encodable { let startedAt: Date }
+            request.httpBody = try? encoder.encode(Body(startedAt: startedAt))
+        }
 
         do {
             let (data, _) = try await URLSession.shared.data(for: request)
@@ -79,6 +85,43 @@ actor TrackingService {
             let _ = try await URLSession.shared.data(for: request)
         } catch {
             print("Failed to end run: \(error)")
+        }
+    }
+
+    func bufferPoint(_ point: TrackingPoint) {
+        buffer.append(point)
+    }
+
+    func flushWithRetry(attempts: Int = 3) async {
+        for attempt in 0..<attempts {
+            await flush()
+            if buffer.isEmpty { return }
+            if attempt < attempts - 1 {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+            }
+        }
+    }
+
+    func endRunWithRetry(runId: String, endedAt: Date, attempts: Int = 3) async {
+        for attempt in 0..<attempts {
+            guard let url = URL(string: "\(baseURL)/api/runs/\(runId)") else { return }
+            var request = URLRequest(url: url)
+            request.httpMethod = "PATCH"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            addAuth(&request)
+
+            struct Body: Encodable { let endedAt: Date }
+            request.httpBody = try? encoder.encode(Body(endedAt: endedAt))
+
+            do {
+                let _ = try await URLSession.shared.data(for: request)
+                return
+            } catch {
+                print("Failed to end run (attempt \(attempt + 1)): \(error)")
+                if attempt < attempts - 1 {
+                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                }
+            }
         }
     }
 
