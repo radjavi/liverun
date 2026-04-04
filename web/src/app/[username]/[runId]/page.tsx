@@ -22,8 +22,11 @@ export default async function RunPage({
   const [run] = await db
     .select({
       id: runs.id,
+      name: runs.name,
       startedAt: runs.startedAt,
       endedAt: runs.endedAt,
+      raceId: runs.raceId,
+      plannedStartTime: runs.plannedStartTime,
     })
     .from(runs)
     .where(and(eq(runs.id, runId), eq(runs.userId, found.id)));
@@ -33,8 +36,11 @@ export default async function RunPage({
   return (
     <RunPageClient
       runId={run.id}
-      startedAt={run.startedAt.toISOString()}
+      name={run.name ?? null}
+      startedAt={run.startedAt?.toISOString() ?? null}
       endedAt={run.endedAt?.toISOString() ?? null}
+      raceId={run.raceId ?? null}
+      plannedStartTime={run.plannedStartTime?.toISOString() ?? null}
     />
   );
 }

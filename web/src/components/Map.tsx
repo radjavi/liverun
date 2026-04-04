@@ -18,7 +18,7 @@ type PointRow = {
   created_at: string;
 };
 
-export default function Map({ runId }: { runId: string }) {
+export default function Map({ runId, raceId, isPlanned }: { runId: string; raceId?: string | null; isPlanned?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
@@ -76,44 +76,70 @@ export default function Map({ runId }: { runId: string }) {
         }
       }
 
-      // Fetch race routes and add as static underlay
-      fetch("/api/races")
-        .then((res) => res.json())
-        .then((collections: GeoJSON.FeatureCollection[]) => {
-          collections.forEach((geojson, i) => {
-            const sourceId = `race-${i}`;
-            map.addSource(sourceId, { type: "geojson", data: geojson });
-            map.addLayer({
-              id: `race-${i}-line`,
-              type: "line",
-              source: sourceId,
-              layout: { "line-join": "round", "line-cap": "round" },
-              paint: {
-                "line-color": "#ffffff",
-                "line-width": 3,
-                "line-opacity": 0.5,
-                "line-dasharray": [1, 2],
-              },
+      // Fetch race route if a race is associated with this run
+      if (raceId) {
+        fetch(`/api/races?id=${raceId}`)
+          .then((res) => res.json())
+          .then((races: { id: string; name: string; geojson: GeoJSON.FeatureCollection }[]) => {
+            const bounds = new mapboxgl.LngLatBounds();
+
+            races.forEach((race, i) => {
+              const sourceId = `race-${i}`;
+              map.addSource(sourceId, { type: "geojson", data: race.geojson });
+              map.addLayer({
+                id: `race-${i}-line`,
+                type: "line",
+                source: sourceId,
+                layout: { "line-join": "round", "line-cap": "round" },
+                paint: {
+                  "line-color": "#ffffff",
+                  "line-width": 3,
+                  "line-opacity": 0.5,
+                  "line-dasharray": [1, 2],
+                },
+              });
+              map.addLayer({
+                id: `race-${i}-arrows`,
+                type: "symbol",
+                source: sourceId,
+                layout: {
+                  "symbol-placement": "line",
+                  "symbol-spacing": 100,
+                  "text-field": "▶",
+                  "text-size": 30,
+                  "text-rotation-alignment": "map",
+                  "text-keep-upright": false,
+                },
+                paint: {
+                  "text-color": "#ffffff",
+                  "text-opacity": 0.6,
+                },
+              });
+
+              // Collect bounds from race coordinates
+              for (const feature of race.geojson.features) {
+                const geom = feature.geometry;
+                if (geom.type === "LineString") {
+                  for (const coord of (geom as GeoJSON.LineString).coordinates) {
+                    bounds.extend([coord[0], coord[1]]);
+                  }
+                } else if (geom.type === "MultiLineString") {
+                  for (const line of (geom as GeoJSON.MultiLineString).coordinates) {
+                    for (const coord of line) {
+                      bounds.extend([coord[0], coord[1]]);
+                    }
+                  }
+                }
+              }
             });
-            map.addLayer({
-              id: `race-${i}-arrows`,
-              type: "symbol",
-              source: sourceId,
-              layout: {
-                "symbol-placement": "line",
-                "symbol-spacing": 100,
-                "text-field": "▶",
-                "text-size": 30,
-                "text-rotation-alignment": "map",
-                "text-keep-upright": false,
-              },
-              paint: {
-                "text-color": "#ffffff",
-                "text-opacity": 0.6,
-              },
-            });
+
+            // Center map on race route for planned runs
+            if (isPlanned && !bounds.isEmpty()) {
+              map.fitBounds(bounds, { padding: 60, pitch: 45 });
+              initializedRef.current = true;
+            }
           });
-        });
+      }
 
       map.addSource("route", {
         type: "geojson",

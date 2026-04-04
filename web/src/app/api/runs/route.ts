@@ -12,10 +12,17 @@ export async function POST(request: NextRequest) {
 
   let startedAt: Date | undefined;
   let endedAt: Date | undefined;
+  let name: string | undefined;
+  let raceId: string | undefined;
+  let plannedStartTime: Date | undefined;
   try {
     const body = await request.json();
     if (body.startedAt) startedAt = new Date(body.startedAt);
     if (body.endedAt) endedAt = new Date(body.endedAt);
+    if (body.name) name = body.name;
+    if (body.raceId) raceId = body.raceId;
+    if (body.plannedStartTime)
+      plannedStartTime = new Date(body.plannedStartTime);
   } catch {
     // No body — use defaults
   }
@@ -26,6 +33,9 @@ export async function POST(request: NextRequest) {
     userId: session.user.id,
     ...(startedAt && { startedAt }),
     ...(endedAt && { endedAt }),
+    ...(name && { name }),
+    ...(raceId && { raceId }),
+    ...(plannedStartTime && { plannedStartTime, startedAt: null }),
   });
   return NextResponse.json({ id });
 }

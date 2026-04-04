@@ -8,7 +8,10 @@ export async function GET(request: NextRequest) {
   originUrl.searchParams.set("table", "runs");
 
   const userId = request.nextUrl.searchParams.get("userId");
-  if (userId) {
+  const runId = request.nextUrl.searchParams.get("runId");
+  if (runId) {
+    originUrl.searchParams.set("where", `id='${runId}'`);
+  } else if (userId) {
     originUrl.searchParams.set("where", `user_id='${userId}'`);
   }
 

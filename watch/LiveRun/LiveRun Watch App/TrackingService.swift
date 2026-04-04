@@ -54,17 +54,19 @@ actor TrackingService {
         }
     }
 
-    func createRun(startedAt: Date? = nil) async -> String? {
+    func createRun(startedAt: Date? = nil, name: String? = nil, raceId: String? = nil) async -> String? {
         guard let url = URL(string: "\(baseURL)/api/runs") else { return nil }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         addAuth(&request)
 
-        if let startedAt = startedAt {
-            struct Body: Encodable { let startedAt: Date }
-            request.httpBody = try? encoder.encode(Body(startedAt: startedAt))
+        struct Body: Encodable {
+            let startedAt: Date?
+            let name: String?
+            let raceId: String?
         }
+        request.httpBody = try? encoder.encode(Body(startedAt: startedAt, name: name, raceId: raceId))
 
         do {
             let (data, _) = try await URLSession.shared.data(for: request)
@@ -73,6 +75,23 @@ actor TrackingService {
         } catch {
             print("Failed to create run: \(error)")
             return nil
+        }
+    }
+
+    func startRun(runId: String, startedAt: Date) async {
+        guard let url = URL(string: "\(baseURL)/api/runs/\(runId)") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        addAuth(&request)
+
+        struct Body: Encodable { let startedAt: Date }
+        request.httpBody = try? encoder.encode(Body(startedAt: startedAt))
+
+        do {
+            let _ = try await URLSession.shared.data(for: request)
+        } catch {
+            print("Failed to start planned run: \(error)")
         }
     }
 

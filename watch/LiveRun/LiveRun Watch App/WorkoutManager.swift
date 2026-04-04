@@ -45,6 +45,9 @@ class WorkoutManager: NSObject, ObservableObject {
     var bearerToken: String?
 
     private var runId: String?
+    private var runName: String?
+    private var runRaceId: String?
+    private var isPlannedRun = false
     private var previousLocation: CLLocation?
     private var lastCheerShownDate = Date.distantPast
     private var isRetryingCreateRun = false
@@ -81,6 +84,16 @@ class WorkoutManager: NSObject, ObservableObject {
     }
 
     func start() {
+        requestPermissions { [weak self] in
+            self?.beginWorkout()
+        }
+    }
+
+    func startPlanned(runId: String, name: String?, raceId: String?) {
+        self.runId = runId
+        self.runName = name
+        self.runRaceId = raceId
+        self.isPlannedRun = true
         requestPermissions { [weak self] in
             self?.beginWorkout()
         }
@@ -178,6 +191,9 @@ class WorkoutManager: NSObject, ObservableObject {
         cheers = []
         startDate = nil
         runId = nil
+        runName = nil
+        runRaceId = nil
+        isPlannedRun = false
         pendingPoints = []
         isRetryingCreateRun = false
         pausedDuration = 0
@@ -231,6 +247,9 @@ class WorkoutManager: NSObject, ObservableObject {
 
             Task {
                 await trackingService.configure(token: bearerToken)
+                if isPlannedRun, let id = runId {
+                    await trackingService.startRun(runId: id, startedAt: now)
+                }
             }
         } catch {
             print("Failed to start workout: \(error)")
@@ -353,13 +372,30 @@ extension WorkoutManager: CLLocationManagerDelegate {
     private func retryCreateRun() {
         guard !isRetryingCreateRun else { return }
         isRetryingCreateRun = true
-        Task {
-            let id = await trackingService.createRun(startedAt: startDate)
-            await MainActor.run {
-                self.isRetryingCreateRun = false
-                if let id = id {
-                    self.runId = id
+
+        if isPlannedRun, let existingId = runId {
+            // Planned run: update startedAt on the existing run
+            Task {
+                await trackingService.configure(token: bearerToken)
+                await trackingService.startRun(runId: existingId, startedAt: startDate ?? Date())
+                await MainActor.run {
+                    self.isRetryingCreateRun = false
                     self.drainPendingPoints()
+                }
+            }
+        } else {
+            Task {
+                let id = await trackingService.createRun(
+                    startedAt: startDate,
+                    name: runName,
+                    raceId: runRaceId
+                )
+                await MainActor.run {
+                    self.isRetryingCreateRun = false
+                    if let id = id {
+                        self.runId = id
+                        self.drainPendingPoints()
+                    }
                 }
             }
         }

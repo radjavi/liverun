@@ -13,9 +13,10 @@ import { user } from "./auth-schema";
 export const runs = pgTable("runs", {
   id: text("id").primaryKey(),
   userId: text("user_id").references(() => user.id),
-  startedAt: timestamp("started_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+  name: text("name"),
+  raceId: text("race_id"),
+  plannedStartTime: timestamp("planned_start_time", { withTimezone: true }),
+  startedAt: timestamp("started_at", { withTimezone: true }).defaultNow(),
   endedAt: timestamp("ended_at", { withTimezone: true }),
 });
 

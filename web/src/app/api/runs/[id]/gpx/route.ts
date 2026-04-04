@@ -44,7 +44,7 @@ export async function GET(
   xmlns="http://www.topografix.com/GPX/1/1"
   xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
   <trk>
-    <name>LiveRun ${run.startedAt.toISOString().split("T")[0]}</name>
+    <name>LiveRun ${run.startedAt?.toISOString().split("T")[0] ?? "unknown"}</name>
     <trkseg>
 ${trkpts}
     </trkseg>

@@ -32,7 +32,7 @@ function formatDuration(seconds: number): string {
   return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-export default function StatsPanel({ runId, startedAt, endedAt }: { runId: string; startedAt: string; endedAt: string | null }) {
+export default function StatsPanel({ runId, startedAt, endedAt }: { runId: string; startedAt: string | null; endedAt: string | null }) {
   const { data: allPoints, isError } = useShape<PointRow>({
     url: `${window.location.origin}/api/sync/points?runId=${runId}`,
   });
@@ -59,6 +59,7 @@ export default function StatsPanel({ runId, startedAt, endedAt }: { runId: strin
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
+    if (!startedAt) return;
     const start = new Date(startedAt).getTime();
     if (endedAt) {
       setElapsed(Math.floor((new Date(endedAt).getTime() - start - pausedDuration) / 1000));

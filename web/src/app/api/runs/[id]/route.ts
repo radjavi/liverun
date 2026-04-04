@@ -1,41 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import db from "@/db";
-import { runs } from "@/db/schema";
+import { runs, trackingPoints, cheers } from "@/db/schema";
 import { getSessionFromRequest } from "@/lib/auth-server";
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+async function getOwnedRun(request: NextRequest, id: string) {
   const session = await getSessionFromRequest(request);
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { id } = await params;
+  if (!session) return null;
 
   const [run] = await db
     .select({ userId: runs.userId })
     .from(runs)
     .where(eq(runs.id, id));
 
-  if (!run || run.userId !== session.user.id) {
+  if (!run || run.userId !== session.user.id) return null;
+  return run;
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const run = await getOwnedRun(request, id);
+  if (!run) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  let endedAt = new Date();
+  const updates: Record<string, Date> = {};
   try {
     const body = await request.json();
-    if (body.endedAt) endedAt = new Date(body.endedAt);
+    if (body.endedAt) updates.endedAt = new Date(body.endedAt);
+    if (body.startedAt) updates.startedAt = new Date(body.startedAt);
   } catch {
-    // No body — use now
+    // No body — default to ending now
+    updates.endedAt = new Date();
   }
 
-  await db
-    .update(runs)
-    .set({ endedAt })
-    .where(eq(runs.id, id));
+  await db.update(runs).set(updates).where(eq(runs.id, id));
+
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const run = await getOwnedRun(request, id);
+  if (!run) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  await db.delete(trackingPoints).where(eq(trackingPoints.runId, id));
+  await db.delete(cheers).where(eq(cheers.runId, id));
+  await db.delete(runs).where(eq(runs.id, id));
 
   return NextResponse.json({ ok: true });
 }

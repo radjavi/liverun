@@ -1,0 +1,1 @@
+ALTER TABLE "runs" ALTER COLUMN "started_at" DROP NOT NULL;
