@@ -273,6 +273,7 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "LiveRun reads heart rate and distance during workouts";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "LiveRun saves your workout data";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "LiveRun tracks your location during workouts";
+				INFOPLIST_KEY_NSMotionUsageDescription = "LiveRun uses motion data to track your running cadence.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKWatchOnly = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -280,7 +281,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = specific.LiveRun.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.imanradjavi.LiveRun;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -312,6 +313,7 @@
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "LiveRun reads heart rate and distance during workouts";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "LiveRun saves your workout data";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "LiveRun tracks your location during workouts";
+				INFOPLIST_KEY_NSMotionUsageDescription = "LiveRun uses motion data to track your running cadence.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKWatchOnly = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -319,7 +321,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = specific.LiveRun.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.imanradjavi.LiveRun;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
