@@ -122,7 +122,7 @@ struct HomeView: View {
                                 .font(.system(size: 24))
                                 .foregroundColor(primaryColor)
                         }
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 20)
                     }
                 }
 
@@ -144,7 +144,7 @@ struct HomeView: View {
                             .font(.system(size: 24))
                             .foregroundColor(primaryColor)
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 20)
                 }
             }
             .listStyle(.carousel)
