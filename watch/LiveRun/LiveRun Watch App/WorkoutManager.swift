@@ -32,7 +32,9 @@ class WorkoutManager: NSObject, ObservableObject {
     @Published var cadence: Double = 0
     @Published var altitude: Double = 0
     @Published var gradeAdjustedPace: Double = 0
+    @Published var currentLapPace: Double = 0
     @Published var cheers: [CheerEntry] = []
+    @Published var notificationsMuted: Bool = false
     var summaryData: RunSummary?
 
     private let healthStore = HKHealthStore()
@@ -55,6 +57,8 @@ class WorkoutManager: NSObject, ObservableObject {
     private var pausedDuration: TimeInterval = 0
     private var pauseStartDate: Date?
     private var pauseStartLocation: CLLocation?
+    private var lastSplitDistanceMeters: Double = 0
+    private var lastSplitElapsedSeconds: TimeInterval = 0
     @Published var showResumePrompt = false
 
     private struct PendingPoint {
@@ -188,6 +192,9 @@ class WorkoutManager: NSObject, ObservableObject {
         cadence = 0
         altitude = 0
         gradeAdjustedPace = 0
+        currentLapPace = 0
+        lastSplitDistanceMeters = 0
+        lastSplitElapsedSeconds = 0
         cheers = []
         startDate = nil
         runId = nil
@@ -266,6 +273,7 @@ class WorkoutManager: NSObject, ObservableObject {
 
         cheers.insert(CheerEntry(count: update.count, message: highlight.message, receivedAt: Date()), at: 0)
 
+        guard !notificationsMuted else { return }
         guard Date().timeIntervalSince(lastCheerShownDate) >= 5 else { return }
         lastCheerShownDate = Date()
 
@@ -509,11 +517,24 @@ extension WorkoutManager: HKLiveWorkoutBuilderDelegate {
                     self.distanceMeters = dist ?? 0
 
                     // Calculate pace from elapsed time and distance
-                    if let dist = dist, dist > 0,
-                       let startDate = workoutBuilder.startDate {
-                        let elapsed = Date().timeIntervalSince(startDate)
+                    if let dist = dist, dist > 0 {
+                        let elapsed = self.elapsedTime(at: Date())
                         let minPerKm = (elapsed / 60) / (dist / 1000)
                         self.pace = minPerKm
+
+                        // Lap tracking: reset boundary when a full unit (km/mi) is covered.
+                        let splitUnit = UnitSystem.current.metersPerUnit
+                        if dist >= self.lastSplitDistanceMeters + splitUnit {
+                            self.lastSplitDistanceMeters = dist
+                            self.lastSplitElapsedSeconds = elapsed
+                            self.currentLapPace = 0
+                        } else {
+                            let lapDist = dist - self.lastSplitDistanceMeters
+                            let lapTime = elapsed - self.lastSplitElapsedSeconds
+                            if lapDist > 5 && lapTime > 0 {
+                                self.currentLapPace = (lapTime / 60) / (lapDist / 1000)
+                            }
+                        }
                     }
 
                 default:

@@ -8,8 +8,23 @@ struct RunningView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            // Swipe left: Pause & Stop buttons
+            // Swipe left: Mute, Pause & Stop buttons
             VStack(spacing: 4) {
+                Button {
+                    workoutManager.notificationsMuted.toggle()
+                } label: {
+                    HStack {
+                        Image(systemName: workoutManager.notificationsMuted ? "bell.slash.fill" : "bell.fill")
+                            .font(.system(size: 14))
+                        Text(workoutManager.notificationsMuted ? "Muted" : "Mute")
+                            .font(.system(size: 16, weight: .semibold, design: .monospaced))
+                    }
+                    .foregroundColor(workoutManager.notificationsMuted ? .secondary : .white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.white.opacity(workoutManager.notificationsMuted ? 0.08 : 0.15))
+                    .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
                 Button {
                     workoutManager.togglePause()
                 } label: {
@@ -44,18 +59,23 @@ struct RunningView: View {
             .padding()
             .tag(0)
 
-            // Main page: Stats
-            VStack(alignment: .leading, spacing: 6) {
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    let elapsed = workoutManager.elapsedTime(at: context.date)
-                    StatRow(label: "TIME", value: formatDuration(elapsed), unit: "")
+            // Main page: Stats + Race layout (crown scrolls vertically)
+            TabView {
+                VStack(alignment: .leading, spacing: 6) {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        let elapsed = workoutManager.elapsedTime(at: context.date)
+                        StatRow(label: "TIME", value: formatDuration(elapsed), unit: "")
+                    }
+                    StatRow(label: "HEART RATE", value: workoutManager.heartRate > 0 ? "\(Int(workoutManager.heartRate))" : "\u{2014}", unit: "bpm")
+                    StatRow(label: "PACE", value: workoutManager.pace > 0 ? formatPaceCompact(units.pace(minPerKm: workoutManager.pace)) : "\u{2014}", unit: units.paceUnit)
+                    StatRow(label: "DISTANCE", value: String(format: "%.2f", units.distance(meters: workoutManager.distanceMeters)), unit: units.distanceUnit)
                 }
-                StatRow(label: "HEART RATE", value: workoutManager.heartRate > 0 ? "\(Int(workoutManager.heartRate))" : "\u{2014}", unit: "bpm")
-                StatRow(label: "PACE", value: workoutManager.pace > 0 ? formatPaceCompact(units.pace(minPerKm: workoutManager.pace)) : "\u{2014}", unit: units.paceUnit)
-                StatRow(label: "DISTANCE", value: String(format: "%.2f", units.distance(meters: workoutManager.distanceMeters)), unit: units.distanceUnit)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(.horizontal)
+
+                raceLayoutView
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.horizontal)
+            .tabViewStyle(.verticalPage)
             .tag(1)
 
             // Swipe right: Cheers
@@ -108,6 +128,72 @@ struct RunningView: View {
         } message: {
             Text("It looks like you're moving. Resume to keep tracking.")
         }
+    }
+
+    private var raceLayoutView: some View {
+        VStack(spacing: 0) {
+            // Top: distance
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(String(format: "%.2f", units.distance(meters: workoutManager.distanceMeters)))
+                    .font(.system(size: 22, weight: .semibold, design: .monospaced).monospacedDigit())
+                Text(units.distanceUnit)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 4)
+
+            Spacer(minLength: 0)
+
+            // Middle: total avg pace (left) and current lap pace (right)
+            HStack(alignment: .top, spacing: 8) {
+                paceColumn(
+                    label: "AVG",
+                    pace: workoutManager.pace,
+                    alignment: .leading
+                )
+                paceColumn(
+                    label: "LAP",
+                    pace: workoutManager.currentLapPace,
+                    alignment: .trailing
+                )
+            }
+
+            Spacer(minLength: 0)
+
+            // Bottom: activity time
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                let elapsed = workoutManager.elapsedTime(at: context.date)
+                Text(formatDuration(elapsed))
+                    .font(.system(size: 18, design: .monospaced).monospacedDigit())
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, 4)
+        }
+        .padding(.horizontal)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func paceColumn(label: String, pace: Double, alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: alignment, spacing: 2) {
+            Text(label)
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .tracking(1.5)
+                .foregroundColor(.secondary)
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(pace > 0 ? formatPaceCompact(units.pace(minPerKm: pace)) : "\u{2014}")
+                    .font(.system(size: 24, weight: .semibold, design: .monospaced).monospacedDigit())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                if pace > 0 {
+                    Text(units.paceUnit)
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: alignment == .leading ? .leading : .trailing)
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {
