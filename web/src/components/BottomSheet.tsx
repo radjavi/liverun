@@ -139,7 +139,7 @@ function computeSplits(points: PointRow[]): Split[] {
   return splits;
 }
 
-export default function MobileOverlays({ runId }: { runId: string }) {
+export default function MobileOverlays({ runId, disabled }: { runId: string; disabled?: boolean }) {
   const [cheersOpen, setCheersOpen] = useState(false);
   const [splitsOpen, setSplitsOpen] = useState(false);
   const cheersInputRef = useRef<HTMLDivElement>(null);
@@ -173,10 +173,11 @@ export default function MobileOverlays({ runId }: { runId: string }) {
       {/* Splits button - top left below stats */}
       <button
         onClick={() => {
+          if (disabled) return;
           setSplitsOpen((o) => !o);
           setCheersOpen(false);
         }}
-        className="absolute top-2 left-2 z-40 flex h-10 w-10 items-center justify-center rounded-md bg-background/90 text-muted-foreground hover:text-foreground transition-colors"
+        className={`absolute top-2 left-2 z-40 flex h-10 w-10 items-center justify-center rounded-md bg-background/90 text-muted-foreground transition-colors ${disabled ? "opacity-50" : "hover:text-foreground"}`}
         aria-label="Toggle splits"
       >
         <List size={18} />
@@ -187,10 +188,11 @@ export default function MobileOverlays({ runId }: { runId: string }) {
         {!cheersOpen && (
           <motion.button
             onClick={() => {
+              if (disabled) return;
               setCheersOpen(true);
               setSplitsOpen(false);
             }}
-            className="absolute bottom-2 left-1/2 -translate-x-1/2 z-40 flex h-10 px-10 items-center justify-center rounded-md bg-background/90 font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+            className={`absolute bottom-2 left-1/2 -translate-x-1/2 z-40 flex h-10 px-10 items-center justify-center rounded-md bg-background/90 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors ${disabled ? "opacity-50" : "hover:text-foreground"}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

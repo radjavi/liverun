@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { notFound } from "next/navigation";
 import { eq, and } from "drizzle-orm";
 import db from "@/db";
@@ -10,6 +11,7 @@ export default async function RunPage({
 }: {
   params: Promise<{ username: string; runId: string }>;
 }) {
+  noStore();
   const { username, runId } = await params;
 
   const [found] = await db

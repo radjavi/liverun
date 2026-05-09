@@ -137,7 +137,7 @@ function formatPace(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-export default function Sidebar({ runId }: { runId: string }) {
+export default function Sidebar({ runId, disabled }: { runId: string; disabled?: boolean }) {
   const { data: allPoints } = useShape<PointRow>({
     url: `${window.location.origin}/api/sync/points?runId=${runId}`,
   });
@@ -221,7 +221,7 @@ export default function Sidebar({ runId }: { runId: string }) {
 
       <div className="p-4">
         <Separator className="mb-3" />
-        <CheerSection runId={runId} />
+        <CheerSection runId={runId} disabled={disabled} />
       </div>
     </div>
   );

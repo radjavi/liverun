@@ -29,7 +29,7 @@ type CheerRow = {
   created_at: string;
 };
 
-export default function CheerSection({ runId }: { runId: string }) {
+export default function CheerSection({ runId, disabled }: { runId: string; disabled?: boolean }) {
   const [customText, setCustomText] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -55,7 +55,7 @@ export default function CheerSection({ runId }: { runId: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className={`flex flex-col gap-3 ${disabled ? "pointer-events-none opacity-50" : ""}`}>
       <div className="flex items-center justify-between px-1">
         <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           Cheer

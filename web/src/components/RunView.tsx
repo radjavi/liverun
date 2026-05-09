@@ -136,71 +136,22 @@ export default function RunView({
   const liveEndedAt = runRows.length > 0 ? runRows[0].ended_at : endedAt;
 
   const showCountdown = !!plannedStartTime && !liveStartedAt;
-  const [transitioned, setTransitioned] = useState(false);
-  const [countdownDone, setCountdownDone] = useState(!showCountdown);
-
-  useEffect(() => {
-    if (!showCountdown && !countdownDone) {
-      setTransitioned(true);
-      const timer = setTimeout(() => setCountdownDone(true), 1800);
-      return () => clearTimeout(timer);
-    }
-    if (showCountdown) {
-      setCountdownDone(false);
-    }
-  }, [showCountdown]);
-
-  const showRunUI = !showCountdown && countdownDone;
-  const fadeIn = transitioned ? { opacity: 0 } : false;
 
   return (
     <div className="flex h-svh flex-col">
-      <AnimatePresence>
-        {showRunUI && (
-          <motion.div
-            key="stats"
-            initial={fadeIn}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <StatsPanel runId={runId} startedAt={liveStartedAt ?? startedAt} endedAt={liveEndedAt ?? null} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <StatsPanel runId={runId} startedAt={liveStartedAt ?? startedAt} endedAt={liveEndedAt ?? null} />
       <div className="relative flex flex-1 overflow-hidden">
-        <AnimatePresence>
-          {showRunUI && (
-            <motion.div
-              key="sidebar"
-              initial={fadeIn}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, ease: "easeOut", delay: transitioned ? 0.15 : 0 }}
-            >
-              <Sidebar runId={runId} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <Map runId={runId} raceId={raceId} isPlanned={showCountdown && !countdownDone} />
-        <AnimatePresence>
-          {showRunUI && (
-            <motion.div
-              key="overlays"
-              initial={fadeIn}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: transitioned ? 0.3 : 0 }}
-            >
-              <MobileOverlays runId={runId} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <Sidebar runId={runId} disabled={showCountdown} />
+        <Map runId={runId} raceId={raceId} isPlanned={showCountdown} />
+        <MobileOverlays runId={runId} disabled={showCountdown} />
         <AnimatePresence>
           {showCountdown && (
             <motion.div
               key="countdown"
-              className="absolute inset-0 z-20 flex items-center justify-center"
+              className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
               initial={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: 1 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
             >
               <CountdownModal
                 name={name || "Outdoor Run"}
