@@ -139,7 +139,15 @@ function computeSplits(points: PointRow[]): Split[] {
   return splits;
 }
 
-export default function MobileOverlays({ runId, disabled }: { runId: string; disabled?: boolean }) {
+export default function MobileOverlays({
+  runId,
+  disabled,
+  hideCheer,
+}: {
+  runId: string;
+  disabled?: boolean;
+  hideCheer?: boolean;
+}) {
   const [cheersOpen, setCheersOpen] = useState(false);
   const [splitsOpen, setSplitsOpen] = useState(false);
   const cheersInputRef = useRef<HTMLDivElement>(null);
@@ -185,7 +193,7 @@ export default function MobileOverlays({ runId, disabled }: { runId: string; dis
 
       {/* Cheer button - bottom center */}
       <AnimatePresence>
-        {!cheersOpen && (
+        {!hideCheer && !cheersOpen && (
           <motion.button
             onClick={() => {
               if (disabled) return;

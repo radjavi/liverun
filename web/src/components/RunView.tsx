@@ -24,7 +24,7 @@ function CountdownModal({
   plannedStartTime: string;
 }) {
   const target = new Date(plannedStartTime).getTime();
-  const [remaining, setRemaining] = useState(target - Date.now());
+  const [remaining, setRemaining] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -124,10 +124,6 @@ export default function RunView({
   raceId: string | null;
   plannedStartTime: string | null;
 }) {
-  const { data: points } = useShape<{ id: string }>({
-    url: `${typeof window !== "undefined" ? window.location.origin : ""}/api/sync/points?runId=${runId}`,
-  });
-
   type RunRow = { id: string; started_at: string | null; ended_at: string | null };
   const { data: runRows } = useShape<RunRow>({
     url: `${typeof window !== "undefined" ? window.location.origin : ""}/api/sync/runs?runId=${runId}`,
@@ -141,9 +137,18 @@ export default function RunView({
     <div className="flex h-svh flex-col">
       <StatsPanel runId={runId} startedAt={liveStartedAt ?? startedAt} endedAt={liveEndedAt ?? null} />
       <div className="relative flex flex-1 overflow-hidden">
-        <Sidebar runId={runId} disabled={showCountdown} />
-        <Map runId={runId} raceId={raceId} isPlanned={showCountdown} />
-        <MobileOverlays runId={runId} disabled={showCountdown} />
+        <Sidebar runId={runId} disabled={showCountdown || !!liveEndedAt} />
+        <Map
+          runId={runId}
+          raceId={raceId}
+          isPlanned={showCountdown}
+          isEnded={!!liveEndedAt}
+        />
+        <MobileOverlays
+          runId={runId}
+          disabled={showCountdown}
+          hideCheer={!!liveEndedAt}
+        />
         <AnimatePresence>
           {showCountdown && (
             <motion.div
