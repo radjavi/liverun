@@ -366,7 +366,7 @@ export default function Map({
     <div className="relative flex-1 min-h-0 min-w-0">
       <div ref={containerRef} className="h-full w-full" />
       {canPlayback && (
-        <div className="pointer-events-none absolute inset-x-2 bottom-6 z-30 lg:inset-x-4 lg:bottom-8">
+        <div className="pointer-events-none absolute inset-x-2 bottom-10 z-30 lg:inset-x-4 lg:bottom-12">
           <div className="pointer-events-auto mx-auto flex max-w-3xl items-center gap-1.5 rounded-md bg-background/90 p-2 backdrop-blur-sm sm:gap-3">
             <button
               type="button"
@@ -399,7 +399,7 @@ export default function Map({
                 className="h-1.5 min-w-0 flex-1 cursor-pointer accent-primary"
                 aria-label="Playback timeline"
               />
-              <span className="hidden w-20 text-right font-mono text-[10px] tabular-nums text-muted-foreground min-[430px]:inline sm:w-24">
+              <span className="hidden shrink-0 text-right font-mono text-[10px] tabular-nums text-muted-foreground min-[430px]:inline">
                 {formatElapsed(elapsedSeconds)} / {formatElapsed(durationSeconds)}
               </span>
             </div>
