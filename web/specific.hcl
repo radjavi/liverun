@@ -22,6 +22,10 @@ service "web" {
 
   endpoint {
     public = true
+
+    health_check {
+      path = "/"
+    }
   }
 
   env = {
